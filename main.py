@@ -1,12 +1,18 @@
-import dash
-import pandas as pd
+
 import dash_mantine_components as dmc
-from dash import Dash, _dash_renderer, dcc, callback, Input, Output, State, html
+import dash_ag_grid as dag
+import pandas as pd
+import dash
+import dash_daq as daq
 import dash_bootstrap_components as dbc
 from dash_iconify import DashIconify
-from utils import melted_df
+from dash import Dash, _dash_renderer, dcc, page_container, callback, Input, Output, State, html, get_relative_path
+
+
+from utils import merged_df
 
 _dash_renderer._set_react_version("18.2.0")
+
 
 stylesheets = [
     "https://unpkg.com/@mantine/dates@7/styles.css",
@@ -17,70 +23,114 @@ stylesheets = [
     "https://unpkg.com/@mantine/nprogress@7/styles.css",
 ]
 
-app = Dash(__name__, 
-           use_pages=True, 
-           external_stylesheets=stylesheets,
-           suppress_callback_exceptions=True,
-           prevent_initial_callbacks=False,
-           )
+app = Dash(
+    external_stylesheets=stylesheets, 
+    use_pages=True,
+    
+)
 
-# developing the icon and theme for changing theme color
-themes_toggle = dmc.ActionIcon(
+links = dmc.Stack(
     [
-        dmc.Paper(DashIconify(icon='radix-icons:sun', width=25), darkHidden=True),
-         dmc.Paper(DashIconify(icon='radix-icons:sun', width=25), darkHidden=True)
+        dmc.Anchor(f"{page['name']}", href=page["relative_path"])
+        for page in dash.page_registry.values()
+        if page["module"] != "pages.not_found_404"
+    ]
+)
+
+theme_toggle = dmc.ActionIcon(
+    [
+        dmc.Paper(DashIconify(icon="radix-icons:sun", width=25), darkHidden=True),
+        dmc.Paper(DashIconify(icon="radix-icons:moon", width=25), lightHidden=True),
     ],
     variant="transparent",
-    color="blue",
-    id="toggle-color",
-    ms="auto"
+    color="yellow",
+    id="color-scheme-toggle",
+    size="lg",
+    ms="auto",
 )
 
-# developing setup
 header = dmc.Group(
     [
-        
-    dmc.Burger(id="burger-icon", opened=False, hiddenFrom="md"),
-    dmc.Text(['Analysis on Pm2.5 Air Pollution from 1850 - 2021'],
-    size="lg",
-    fw='700',
-    tt='center',
-    
-   # leftSection=DashIconify(icon=''
-    )
-    ], justify = "flex-start",
-    h=70,
-    
-
+        dmc.Burger(id="burger-button", opened=False, hiddenFrom="md"),
+        dmc.Text("Global Air Quality Analys with Plotly (1850 - 2021)", size="lg",ta='center', fw=700),
+        theme_toggle
+    ],
+    justify="flex-start",
+    h=70
 )
+
+
+# Dropdown for year selection
+yr_dropdown = dmc.Select(
+    id="year-dropdown",
+    label='Select Year',
+    data=[{'label': year, 'value': year} for year in merged_df['Year'].unique()],
+    value='2021'
+)
+
+# Dropdown for year selection
+country_dropdown = dmc.Select(
+    id="country-dropdown",
+    label='Select Country',
+    data=[{'label': country, 'value': country} for country in merged_df['Country'].unique()],
+    value=merged_df['Country'][0]
+)
+
+
+# Create the Gauge indicator
+pm_indicator = daq.Gauge(
+    id='indicator',
+    color={
+        'gradient': False,
+        'ranges': {
+            "green": [0, 12.1],
+            "yellow": [12.1, 35.5],
+            "orange": [35.5, 55.5],
+            "red": [55.5, 150.4],
+            "purple": [150.5, 250.4],
+            "brown": [250.5, 500]
+        }
+    },
+    min=0,  
+    max=125,  
+    showCurrentValue=True,
+    units="PM2.5",
+    value=merged_df['PM2.5'].mean(),  
+    size=150,  
+    label="PM2.5 Indicator for the Year",  
+    scale={
+        'start': 0,
+        'interval': 25  
+    }
+)
+
+
+
 # developing the side setup inside a variable 
 navbar = dcc.Loading(
     dmc.ScrollArea(
-        [
-            dmc.NavLink(label='Introduction and Project Detail',),
-            dmc.Space(h='md'),
-            dmc.NavLink(label='Geospatial and Analysis',),
-            dmc.Space(h='md'),
-            dmc.NavLink(label='Project Report and Recommendation',),
-            dmc.Space(h='md'),
-            dmc.Select(
-                id="year-dropdown",
-                label='Select Year',
-                data=[{'label': Year, 'value': Year} for Year in melted_df['Year']]
+            dmc.Stack(
+                [
+                    
+                    links,
+                  
+                    yr_dropdown,
+                  
+                    pm_indicator,
+                   
+                    country_dropdown
+
+                ]
             )
-        ]
     )
 )
 
-page_content = [
-    dash.page_container
-]
 
 app_shell = dmc.AppShell(
     [
         dmc.AppShellHeader(header, px=25),
-        dmc.AppShellNavbar(navbar, p=24),
-        dmc.AppShellMain(page_content),
+        dmc.AppShellNavbar(navbar, p=19),
+        dmc.AppShellMain(dash.page_container, pt=70),
         dmc.AppShellFooter(
             [
                 dmc.Group(
@@ -94,7 +144,7 @@ app_shell = dmc.AppShell(
                             childrenOffset=28,
                             children=[
                                 dmc.NavLink(label="GitHub", href='https://github.com/SmartDvi/Air_Pollution.git'),
-                                dmc.NavLink(label="GitHub", href='https://py.cafe/SmartDvi/plotly-global-air-quality')
+                                dmc.NavLink(label="PY.CAFE", href='https://py.cafe/SmartDvi/plotly-global-air-quality')
                             ]
 
                         )
@@ -102,41 +152,48 @@ app_shell = dmc.AppShell(
                 )
             ]
         )
-    ]
-),
-id='app_shell'
+    ],
+    header={"height": 70},
+    padding="xl",
+    navbar={
+        "width": 375,
+        "breakpoint": "md",
+        "collapsed": {"mobile": True},
+    },
+)
 
-# developing app layout
 app.layout = dmc.MantineProvider(
     [
-        dcc.Store(id='theme_store', storage_type='local', data='light'),
-        app_shell
+        
+       links,
+        app_shell,
+       # dash.page_container
     ],
-    id='mantine_provider',
-    forceColorScheme='light',
+    id="mantine-provider",
+    forceColorScheme="light",
 )
+
 
 @callback(
-    Output('app_shell', 'navbar'),
-    Input('burger-icon', 'opened'),
-    State('app_shell', 'navbar')
+    Output("app-shell", "navbar"),
+    Input("burger-button", "opened"),
+    State("app-shell", "navbar"),
 )
-
 def navbar_is_open(opened, navbar):
-    navbar['collapsed'] = {'mobile': not opened}
+    navbar["collapsed"] = {"mobile": not opened}
     return navbar
 
+
 @callback(
-    Output('mantine_provider', 'forceColorScheme'),
-    Input('toggle-color', 'n_click'),
-    State('mantine_provider', 'forceColorScheme'),
-    prevent_initial_call = True,
+    Output("mantine-provider", "forceColorScheme"),
+    Input("color-scheme-toggle", "n_clicks"),
+    State("mantine-provider", "forceColorScheme"),
+    prevent_initial_call=True,
 )
-
 def switch_theme(_, theme):
-    return 'dark' if theme == 'light' else 'light'
+    return "dark" if theme == "light" else "light"
 
 
 
-if __name__ =="__main__":
-    app.run(debug=True, port=8060)
+if __name__ == "__main__":
+    app.run_server(debug=True, port=6070)
