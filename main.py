@@ -51,8 +51,8 @@ theme_toggle = dmc.ActionIcon(
 
 header = dmc.Group(
     [
-        dmc.Burger(id="burger-button", opened=False, hiddenFrom="md"),
-        dmc.Text("Global Air Quality Analys with Plotly (1850 - 2021)", size="lg",ta='center', fw=700),
+        dmc.Burger(id="burger-button", opened=True, hiddenFrom="md"),
+        dmc.Text("Global Air Quality Analys with Plotly (1850 - 2021)", size="lg",ta='center',c='blue', fw=700),
         theme_toggle
     ],
     justify="flex-start",
@@ -81,7 +81,7 @@ country_dropdown = dmc.Select(
 pm_indicator = daq.Gauge(
     id='indicator',
     color={
-        'gradient': False,
+        'gradient': True,
         'ranges': {
             "green": [0, 12.1],
             "yellow": [12.1, 35.5],
@@ -128,9 +128,9 @@ navbar = dcc.Loading(
 
 app_shell = dmc.AppShell(
     [
-        dmc.AppShellHeader(header, px=25),
+        dmc.AppShellHeader(header, px=15),
         dmc.AppShellNavbar(navbar, p=19),
-        dmc.AppShellMain(dash.page_container, pt=70),
+        dmc.AppShellMain(dash.page_container, pt=30),
         dmc.AppShellFooter(
             [
                 dmc.Group(
@@ -156,7 +156,7 @@ app_shell = dmc.AppShell(
     header={"height": 70},
     padding="xl",
     navbar={
-        "width": 375,
+        "width": 250,
         "breakpoint": "md",
         "collapsed": {"mobile": True},
     },
@@ -164,8 +164,7 @@ app_shell = dmc.AppShell(
 
 app.layout = dmc.MantineProvider(
     [
-        
-       links,
+        dcc.Store(id="theme-store", storage_type="local", data="light"),
         app_shell,
        # dash.page_container
     ],
@@ -180,7 +179,7 @@ app.layout = dmc.MantineProvider(
     State("app-shell", "navbar"),
 )
 def navbar_is_open(opened, navbar):
-    navbar["collapsed"] = {"mobile": not opened}
+    navbar["collapsed"] = {"mobile": opened}
     return navbar
 
 
