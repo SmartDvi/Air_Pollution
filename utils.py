@@ -1,8 +1,5 @@
 import pandas as pd
-from geopy.geocoders import Nominatim
-import random
-import os
-import time
+
 
 def load_data():
     df = pd.read_csv('C:\\Users\\Moritus Peters\\Downloads\\air-pollution.csv')
@@ -35,6 +32,8 @@ def load_data():
 
     return merged_df
 
+
+
 def categorize_pm25(value):
     if value <= 9.0:
         return "Good"
@@ -48,6 +47,8 @@ def categorize_pm25(value):
         return "Very Unhealthy"
     else:
         return "Hazardous"
+    
+
 
 def group_aqi_level(aqi_level, specific_level):
     """
@@ -87,4 +88,24 @@ aqi_data = prepare_aqi_data(merged_df)
 # Output a summary of AQI data (for debugging)
 aqi_data
 
+def standardize_country_names(df, country_column='Country'):
+    country_mapping = {
+        "Côte d'Ivoire": "Ivory Coast",
+        "UK": "United Kingdom",
+        "USA": "United States",
+        "D.C., USA": "United States",
+        "Taiwan": "Republic of China (Taiwan)",
+        "South Korea": "Republic of Korea",
+        "North Korea": "Democratic People's Republic of Korea",
+        "Burkina Faso": "Upper Volta",
+        "DRC": "Democratic Republic of the Congo",
+        "CAR": "Central African Republic",
+        "UAE": "United Arab Emirates",
+        "Vietnam": "Socialist Republic of Vietnam"
+    }
 
+    # Standardize country names using the mapping
+    df[country_column] = df[country_column].replace(country_mapping)
+
+    return df
+merged_df = standardize_country_names(merged_df)

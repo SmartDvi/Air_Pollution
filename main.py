@@ -13,18 +13,8 @@ from utils import merged_df
 
 _dash_renderer._set_react_version("18.2.0")
 
-
-stylesheets = [
-    "https://unpkg.com/@mantine/dates@7/styles.css",
-    "https://unpkg.com/@mantine/code-highlight@7/styles.css",
-    "https://unpkg.com/@mantine/charts@7/styles.css",
-    "https://unpkg.com/@mantine/carousel@7/styles.css",
-    "https://unpkg.com/@mantine/notifications@7/styles.css",
-    "https://unpkg.com/@mantine/nprogress@7/styles.css",
-]
-
 app = Dash(
-    external_stylesheets=stylesheets, 
+    external_stylesheets=dmc.styles.ALL, 
     use_pages=True,
     
 )
@@ -95,7 +85,7 @@ pm_indicator = daq.Gauge(
     max=125,  
     showCurrentValue=True,
     units="PM2.5",
-    value=merged_df['PM2.5'].mean(),  
+    value=merged_df['PM2.5'].sum(),  
     size=150,  
     label="PM2.5 Indicator for the Year",  
     scale={
@@ -109,7 +99,9 @@ pm_indicator = daq.Gauge(
 # developing the side setup inside a variable 
 navbar = dcc.Loading(
     dmc.ScrollArea(
-            dmc.Stack(
+
+[
+      dmc.Stack(
                 [
                     
                     links,
@@ -122,7 +114,10 @@ navbar = dcc.Loading(
 
                 ]
             )
-    )
+], offsetScrollbars=True,
+type='scroll',
+style={'height': '100%'}
+    ),
 )
 
 
@@ -130,7 +125,7 @@ app_shell = dmc.AppShell(
     [
         dmc.AppShellHeader(header, px=15),
         dmc.AppShellNavbar(navbar, p=19),
-        dmc.AppShellMain(dash.page_container, pt=30),
+        dmc.AppShellMain(dash.page_container, pt=60),
         dmc.AppShellFooter(
             [
                 dmc.Group(
@@ -160,13 +155,17 @@ app_shell = dmc.AppShell(
         "breakpoint": "md",
         "collapsed": {"mobile": True},
     },
+    aside={
+        "width": 150,
+        "breakpoint": "xs",
+        "collapsed": {"desktop": False, "mobile": True},
+    },
+    id="app-shell",
 )
 
 app.layout = dmc.MantineProvider(
     [
-        dcc.Store(id="theme-store", storage_type="local", data="light"),
-        app_shell,
-       # dash.page_container
+        app_shell
     ],
     id="mantine-provider",
     forceColorScheme="light",

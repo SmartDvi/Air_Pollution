@@ -51,85 +51,65 @@ description= 'Belief Intoduction to the project and Dateset details',
 order=0)
 
 
+date_obj = "d3.timeParse('%Y')(params.merged_df.Year)"
 
+columnDefs=[
+    {'field': 'City', 'headerName': 'City'},
+    {'field': 'Country', 'headerName': 'Country'},
+    {
+        'field': 'PM2.5', 
+        'headerName': 'PM2.5',
+        'valueFormatter': {"function": "d3.format('.2f')(params.value)"}, 
+        'type': 'rightAligned',
+       
+    },
+    {
+        'field': 'Year',
+        'headerName': 'Year',
+        
+        "valueFormatter": {"function": "d3.format('')(params.value)"},  # Format to two decimal places
+        'type': 'rightAligned'
+    },
+    {
+        'field': 'PM2.5_Anomaly',
+        'headerName': 'PM2.5 Anomaly',
+        'valueFormatter': {"function": "d3.format('.2f')(params.value)"},  # Format to two decimal places
+        'type': 'rightAligned'
+    },
+    {
+        'field': 'PM2.5_Pct_Change',
+        'headerName': 'PM2.5 % Change',
+        'valueFormatter': {"function": "d3.format('.1f')(params.value) + '%'"},
+        'type': 'rightAligned'
+    },
+    {
+        'field': 'Yearly_Avg_PM2.5',
+        'headerName': 'Yearly_Avg_PM2.5',
+        'valueFormatter': {"function": "value"},  # Format to two decimal places
+        'type': 'rightAligned'
+    }
+]
 
-# Retrive column names
-columns = merged_df.columns
+grid = html.Div([
+    html.H1('Detail Table'),
+    dag.AgGrid(
+        id='grid_id',
+        columnDefs=columnDefs,
+        columnSize="autoSize",
+        rowData=merged_df.to_dict('records'),
+        defaultColDef={'editable': True, "filter": True, "floatingFilter": True},
+        dashGridOptions = {"suppressFieldDotNotation": True}
 
-# Generate column definition for AG Grid
-def data_detail():
-    grid = dag.AgGrid(
-        id='table',
-        rowData=merged_df.to_dict("records"),  # Convert dataframe to dictionary format
-        columnDefs=[
-            {'field': 'City', 'headerName': 'City'},
-            {'field': 'Country', 'headerName': 'Country'},
-            {
-                'field': 'PM2.5', 
-                'headerName': 'PM2.5',
-                'cellStyle': {
-                    'function': """(params) => {
-                        if (params.data.AQI_Level === 'Good') {
-                            return { backgroundColor: 'green', color: 'white' };
-                        } else if (params.data.AQI_Level === 'Moderate') {
-                            return { backgroundColor: 'yellow', color: 'black' };
-                        } else if (params.data.AQI_Level === 'Unhealthy for Sensitive Groups') {
-                            return { backgroundColor: 'orange', color: 'black' };
-                        } else if (params.data.AQI_Level === 'Unhealthy') {
-                            return { backgroundColor: 'red', color: 'white' };
-                        } else if (params.data.AQI_Level === 'Very Unhealthy') {
-                            return { backgroundColor: 'purple', color: 'white' };
-                        } else if (params.data.AQI_Level === 'Hazardous') {
-                            return { backgroundColor: 'brown', color: 'white' };
-                        }
-                        return null;
-                    }"""
-                },
-                'valueFormatter': {"function": "d3.format('.2f')(params.value)"}, 
-                'type': 'rightAligned'
-            },
-            {
-                'field': 'PM2.5_Anomaly',
-                'headerName': 'PM2.5 Anomaly',
-                'valueFormatter': {"function": "d3.format('.2f')(params.value)"},  # Format to two decimal places
-                'type': 'rightAligned'
-            },
-            {
-                'field': 'PM2.5_Pct_Change',
-                'headerName': 'PM2.5 % Change',
-                'valueFormatter': {"function": "d3.format('.1f')(params.value) + '%'"},
-                'type': 'rightAligned'
-            },
-            {
-                'field': 'Yearly_Avg_PM2.5',
-                'headerName': 'Yearly Avg PM2.5',
-                'valueFormatter': {"function": "d3.format('.2f')(params.value)"},  # Format to two decimal places
-                'type': 'rightAligned'
-            }
-        ],
-        defaultColDef={"filter": True, "floatingFilter": True},  # Enable filters
-        columnSize='autoSize',  # Automatically size columns
-        dashGridOptions={"suppressColumnVirtualisation": True}  # Avoid column virtualization for better performance
-    )
-    return grid
+    ),
 
-# developing app layout
-layout = dmc.MantineProvider(
+]) 
+# Full layout of the page
+layout = html.Div(
     [
-         dmc.Box([
-            dmc.Text("INTRODUCTION", ta='center'),
-            dcc.Markdown(task, style={"maxWidth": 800}),
-            dcc.Markdown(introduction, style={"maxWidth": 800}),
-    ]),
-        dmc.Grid([
-            dmc.GridCol([
-                # Bottom section with data table
-        dmc.Paper([
-            dmc.Text('Data Details'),
-            data_detail()
-        ], px="md", withBorder=True, style={"marginTop": "20px"}),
-
-            ])
-        ])
-    ]
+        html.H2('INTRODUCTION', style={'textAlign': 'center', 'marginTop': '20px'}),
+        dcc.Markdown(task, style={"maxWidth": 800, "margin": "20px auto", "padding": "20px", "backgroundColor": "#f1f1f1", }),
+        dcc.Markdown(introduction, style={"maxWidth": 800, "margin": "20px auto", "padding": "20px", "backgroundColor": "#f1f1f1",}),
+        grid
+    ],
+    style={'fontFamily': 'Arial, sans-serif'}
 )
