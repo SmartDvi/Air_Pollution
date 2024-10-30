@@ -107,8 +107,8 @@ grid = html.Div([
 layout = html.Div(
     [
         html.H2('INTRODUCTION', style={'textAlign': 'center', 'marginTop': '20px'}),
-        dcc.Markdown(task, style={"maxWidth": 800, "margin": "20px auto", "padding": "20px", "backgroundColor": "#f1f1f1", }),
-        dcc.Markdown(introduction, style={"maxWidth": 800, "margin": "20px auto", "padding": "20px", "backgroundColor": "#f1f1f1",}),
+        dcc.Markdown(task, style={"maxWidth": 800, "margin": "20px auto", "padding": "20px" }),
+        dcc.Markdown(introduction, style={"maxWidth": 800, "margin": "20px auto", "padding": "20px"}),
         grid
     ],
     style={'fontFamily': 'Arial, sans-serif'}

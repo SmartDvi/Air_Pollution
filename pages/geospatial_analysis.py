@@ -1,13 +1,13 @@
 import dash_mantine_components as dmc
 from dash import register_page, html, Input, Output, dcc, callback
 import pandas as pd
+import dash_daq as daq
+
+
+
 import plotly.express as px
 from utils import merged_df
 
-from components import (
-    pm_indicator, yr_dropdown, country_dropdown, color_map, create_aqi_tab,
-     tabs
-)
 
 
 register_page(__name__, path='/geospatial_analysis', title='Geospatial Analysis')
@@ -15,6 +15,61 @@ register_page(__name__, path='/geospatial_analysis', title='Geospatial Analysis'
 Average_trnd = merged_df['PM2.5'].mean()
 default_year = merged_df['Year'].max()
 # Mapbox scatter plot
+
+Average_trnd = merged_df['PM2.5'].sum()
+
+
+color_map = {
+        'Good': 'green',
+        'Hazardous': 'red',
+        'Moderate': 'yellow',
+        'Unhealthy': 'orange',
+        'Unhealthy for Sensitive Groups': 'purple',
+        'Others': 'gray'
+    }
+
+
+
+# Dropdown for year selection
+yr_dropdown = dmc.Select(
+    id="year-dropdown",
+    label='Select Year',
+    data=[{'label': year, 'value': year} for year in merged_df['Year'].unique()],
+    value='2021'
+)
+
+# Dropdown for country selection
+country_dropdown = dmc.Select(
+    id="country-dropdown",
+    label='Select Country',
+    data=[{'label': country, 'value': country} for country in sorted(merged_df['Country'].unique())],
+    value=sorted(merged_df['Country'].unique())[0]  # Default to the first country alphabetically
+)
+
+
+# Define gauge indicator with adjusted color range
+pm_indicator = daq.Gauge(
+    id='indicator',
+    color={
+        'gradient': True,
+        'ranges': {
+            "green": [0, 12],
+            "yellow": [12.1, 35.4],
+            "orange": [35.5, 55.4],
+            "red": [55.5, 70.4],
+            "purple": [70.5, 80],  # Slightly above your max PM2.5 value
+        }
+    },
+    min=0,
+    max=80,
+    showCurrentValue=True,
+    units="µg/m³",
+    value=Average_trnd,  # set to average PM2.5 or other current value
+    size=150,
+    label="PM2.5 Indicator",
+    scale={'start': 0, 'interval': 10}
+)
+
 
 def create_donut_chart_with_label(aqi_level, year, country):
     # Filter the data based on selected year and country
@@ -57,6 +112,53 @@ style={
         "alignItems": "right",  
         "height": "auto"         
     },
+
+# AQI Level-Based Bar Chart Function
+def create_aqi_tab(aqi_level, year):
+    data = merged_df[(merged_df['AQI_Level'] == aqi_level) & (merged_df['Year'] == year)]
+    data_for_chart = data.groupby('City')['PM2.5'].sum().reset_index()
+    top_10 = data_for_chart.nlargest(10, 'PM2.5')
+    least_10 = data_for_chart.nsmallest(10, 'PM2.5')
+    comb = pd.concat([top_10, least_10])
+
+    return dmc.BarChart(
+        id=f'aqi_tab_{aqi_level}',
+        h=180,
+        dataKey="City",
+        data=comb.to_dict('records'),
+        orientation="vertical",
+        yAxisProps={"width": 80},
+        series=[{
+            "name": "PM2.5",
+            "data": comb['PM2.5'].tolist(),
+            "color": color_map[aqi_level],
+        }]
+    )
+
+# Dynamic Tabs Component
+def tabs(year):
+    return dmc.Tabs(
+        [
+            dmc.TabsList(
+                [
+                    dmc.TabsTab('Good', value='Good'),
+                    dmc.TabsTab('Moderate', value='Moderate'),
+                    dmc.TabsTab('Unhealthy', value='Unhealthy'),
+                    dmc.TabsTab('Unhealthy for Sensitive Groups', value='Unhealthy for Sensitive Groups'),
+                    dmc.TabsTab('Hazardous', value='Hazardous')
+                ], grow=True
+            ),
+            dmc.TabsPanel(create_aqi_tab('Good', year), value='Good'),
+            dmc.TabsPanel(create_aqi_tab('Moderate', year), value='Moderate'),
+            dmc.TabsPanel(create_aqi_tab('Unhealthy', year), value='Unhealthy'),
+            dmc.TabsPanel(create_aqi_tab('Unhealthy for Sensitive Groups', year), value='Unhealthy for Sensitive Groups'),
+            dmc.TabsPanel(create_aqi_tab('Hazardous', year), value='Hazardous'),
+        ],
+        value='Good',
+        id='return_tabs'
+    )
+
+
 
 
 layout = dmc.MantineProvider(
@@ -139,8 +241,8 @@ def Gauge_indicator(selected_year, selected_country):
     # Get the average PM2.5 for the selected year and country
     pm25_value = filtered_df['PM2.5'].mean() if not filtered_df.empty else 0
     
-    return pm25_value  # Return the PM2.5 value to update the gauge
-
+    return pm25_value  
+"""
 @callback(
     Output('aqi_tab', 'figure'),  
     Input('year-dropdown', 'value')  
@@ -148,7 +250,7 @@ def Gauge_indicator(selected_year, selected_country):
 def update_chart(selected_tab):
     return create_aqi_tab(selected_tab)  
 
-
+"""
 # Callback to update Mapbox based on selected year
 @callback(
     Output('mapbox', 'figure'),
@@ -156,9 +258,9 @@ def update_chart(selected_tab):
     
 )
 def update_mapbox(selected_year):
-    print(f"Selected Year: {selected_year}")  # Debugging line
+    print(f"Selected Year: {selected_year}")  
     filtered_df = merged_df[merged_df['Year'] == selected_year]
-    print(f"Filtered Data: {filtered_df.shape[0]} rows")  # Debugging line
+    print(f"Filtered Data: {filtered_df.shape[0]} rows")  
     
     
     fig = px.scatter_mapbox(
@@ -167,18 +269,19 @@ def update_mapbox(selected_year):
         lon='Longitude',
         color='AQI_Level',
         color_discrete_map={
-            'Good': 'green',
+           'Good': 'green',
+            'Hazardous': 'red',
             'Moderate': 'yellow',
-            'Unhealthy for Sensitive Groups': 'orange',
-            'Unhealthy': 'purple',
-            'Hazardous': 'brown',
-            'Others': 'gray'  # Handle invalid values
+            'Unhealthy': 'orange',
+            'Unhealthy for Sensitive Groups': 'purple',
+            'Others': 'gray' 
         },
         size='PM2.5', 
         size_max=23,
         hover_name='Country',
-        text=filtered_df['City'],  # Use the City column from the filtered DataFrame
-        zoom=3,
+        text=filtered_df['City'],
+        zoom=0.5, 
+        center={"lat": 20, "lon": 0},
         hover_data={'Latitude': False, 'Longitude': False, 'PM2.5_Pct_Change': True, 'Yearly_Avg_PM2.5': True},
         mapbox_style='open-street-map',
     )
@@ -204,21 +307,12 @@ def update_mapbox(selected_year):
     
     return fig
 
-# callback for the tab function call back  
 @callback(
-    Output('return_tabs', 'tab'),
+    Output('return_tabs', 'children'),
     Input('year-dropdown', 'value')
 )
-
-def update_tab_bars(selected_year):
-    if selected_year == filtered_df['Year'].isnul().unique():
-        filtered_df = merged_df
-    else:
-        filtered_df = merged_df
-    return tabs(filtered_df)
-
-
-
+def update_tabs_based_on_year(selected_year):
+    return tabs(selected_year)
 
 @callback(
     Output('yr_trend', 'children'),

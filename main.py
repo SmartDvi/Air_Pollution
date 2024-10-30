@@ -1,15 +1,13 @@
 
 import dash_mantine_components as dmc
-import dash_ag_grid as dag
-import pandas as pd
 import dash
 import dash_daq as daq
-import dash_bootstrap_components as dbc
 from dash_iconify import DashIconify
-from dash import Dash, _dash_renderer, dcc, page_container, callback, Input, Output, State, html, get_relative_path
+from dash import Dash, _dash_renderer, dcc, callback, Input, Output, State
 
 
 from utils import merged_df
+from pages.geospatial_analysis import yr_dropdown, country_dropdown
 
 _dash_renderer._set_react_version("18.2.0")
 
@@ -48,24 +46,6 @@ header = dmc.Group(
     justify="flex-start",
     h=70
 )
-
-
-# Dropdown for year selection
-yr_dropdown = dmc.Select(
-    id="year-dropdown",
-    label='Select Year',
-    data=[{'label': year, 'value': year} for year in merged_df['Year'].unique()],
-    value='2021'
-)
-
-# Dropdown for year selection
-country_dropdown = dmc.Select(
-    id="country-dropdown",
-    label='Select Country',
-    data=[{'label': country, 'value': country} for country in merged_df['Country'].unique()],
-    value=merged_df['Country'][0]
-)
-
 
 # Create the Gauge indicator
 pm_indicator = daq.Gauge(
@@ -125,7 +105,7 @@ app_shell = dmc.AppShell(
     [
         dmc.AppShellHeader(header, px=15),
         dmc.AppShellNavbar(navbar, p=19),
-        dmc.AppShellMain(dash.page_container, pt=60),
+        dmc.AppShellMain(dash.page_container, py=60, pr=5),
         dmc.AppShellFooter(
             [
                 dmc.Group(
