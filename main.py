@@ -5,10 +5,6 @@ import dash_daq as daq
 from dash_iconify import DashIconify
 from dash import Dash, _dash_renderer, dcc, callback, Input, Output, State
 
-
-from utils import merged_df
-from pages.geospatial_analysis import yr_dropdown, country_dropdown
-
 _dash_renderer._set_react_version("18.2.0")
 
 app = Dash(
@@ -16,6 +12,9 @@ app = Dash(
     use_pages=True,
     
 )
+
+from utils import merged_df
+from pages.geospatial_analysis import yr_dropdown, country_dropdown
 
 links = dmc.Stack(
     [

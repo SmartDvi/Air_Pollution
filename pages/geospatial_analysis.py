@@ -2,34 +2,36 @@ import dash_mantine_components as dmc
 from dash import register_page, html, Input, Output, dcc, callback
 import pandas as pd
 import dash_daq as daq
+import dash
 
-
-
-import plotly.express as px
-from utils import merged_df
 
 
 
 register_page(__name__, path='/geospatial_analysis', title='Geospatial Analysis')
 
+
+import plotly.express as px
+from utils import merged_df, group_aqi_level
+
+
 Average_trnd = merged_df['PM2.5'].mean()
 default_year = merged_df['Year'].max()
 # Mapbox scatter plot
 
-Average_trnd = merged_df['PM2.5'].sum()
-
 
 color_map = {
-        'Good': 'green',
-        'Hazardous': 'red',
-        'Moderate': 'yellow',
-        'Unhealthy': 'orange',
-        'Unhealthy for Sensitive Groups': 'purple',
-        'Others': 'gray'
-    }
+    'Good': 'green',
+    'Moderate': 'yellow',
+    'Unhealthy for Sensitive Groups': 'orange',
+    'Unhealthy': 'red',
+    'Very Unhealthy': 'purple', 
+    'Hazardous': 'maroon'
+}
 
 
 
+
+print(color_map.keys())
 # Dropdown for year selection
 yr_dropdown = dmc.Select(
     id="year-dropdown",
@@ -39,12 +41,15 @@ yr_dropdown = dmc.Select(
 )
 
 # Dropdown for country selection
-country_dropdown = dmc.Select(
-    id="country-dropdown",
-    label='Select Country',
-    data=[{'label': country, 'value': country} for country in sorted(merged_df['Country'].unique())],
-    value=sorted(merged_df['Country'].unique())[0]  # Default to the first country alphabetically
-)
+def create_country_dropdown(merged_df):
+    return dmc.Select(
+        id="country-dropdown",
+        label='Select Country',
+        data=[{'label': country, 'value': country} for country in sorted(merged_df['Country'].unique())],
+        value=sorted(merged_df['Country'].unique())[0]
+    )
+
+country_dropdown = create_country_dropdown(merged_df)
 
 
 # Define gauge indicator with adjusted color range
@@ -55,13 +60,15 @@ pm_indicator = daq.Gauge(
         'ranges': {
             "green": [0, 12],
             "yellow": [12.1, 35.4],
-            "orange": [35.5, 55.4],
-            "red": [55.5, 70.4],
-            "purple": [70.5, 80],  # Slightly above your max PM2.5 value
+            "orange": [35.5, 55],
+            "purple": [55.1, 75.4],
+            "red": [75.1, 90],
+            "black": [90.1, 100],
+              
         }
     },
     min=0,
-    max=80,
+    max=100,
     showCurrentValue=True,
     units="µg/m³",
     value=Average_trnd,  # set to average PM2.5 or other current value
@@ -92,7 +99,7 @@ def create_donut_chart_with_label(aqi_level, year, country):
             dmc.DonutChart(
                 id='pm_gauge',
                 data=chart_data,
-                size=85,
+                size=82,
                 thickness=18,
                 withTooltip=True,
                 mx='auto',
@@ -145,6 +152,7 @@ def tabs(year):
                     dmc.TabsTab('Moderate', value='Moderate'),
                     dmc.TabsTab('Unhealthy', value='Unhealthy'),
                     dmc.TabsTab('Unhealthy for Sensitive Groups', value='Unhealthy for Sensitive Groups'),
+                    dmc.TabsTab('Very Unhealthy', value='Very Unhealthy'),
                     dmc.TabsTab('Hazardous', value='Hazardous')
                 ], grow=True
             ),
@@ -152,6 +160,7 @@ def tabs(year):
             dmc.TabsPanel(create_aqi_tab('Moderate', year), value='Moderate'),
             dmc.TabsPanel(create_aqi_tab('Unhealthy', year), value='Unhealthy'),
             dmc.TabsPanel(create_aqi_tab('Unhealthy for Sensitive Groups', year), value='Unhealthy for Sensitive Groups'),
+            dmc.TabsPanel(create_aqi_tab('Very Unhealthy', year), value='Very Unhealthy'),
             dmc.TabsPanel(create_aqi_tab('Hazardous', year), value='Hazardous'),
         ],
         value='Good',
@@ -383,6 +392,7 @@ def update_donut_charts(selected_year, selected_country):
             create_donut_chart_with_label('Hazardous', selected_year, selected_country),
             create_donut_chart_with_label('Moderate', selected_year, selected_country),
             create_donut_chart_with_label('Unhealthy', selected_year, selected_country),
+            create_donut_chart_with_label('Very Unhealthy', selected_year, selected_country),
             create_donut_chart_with_label('Unhealthy for Sensitive Groups', selected_year, selected_country)
         ],
         justify="center",

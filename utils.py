@@ -35,15 +35,15 @@ def load_data():
 
 
 def categorize_pm25(value):
-    if value <= 9.0:
+    if value <= 12.0:
         return "Good"
-    elif 9.1 <= value <= 35.4:
+    elif 12.1 <= value <= 35.4:
         return "Moderate"
-    elif 35.5 <= value <= 55.4:
+    elif 35.5 <= value <= 55:
         return "Unhealthy for Sensitive Groups"
-    elif 55.5 <= value <= 150.4:
+    elif 55.1 <= value <= 75:
         return "Unhealthy"
-    elif 150.5 <= value <= 225.4:
+    elif 75.1 <= value <= 90:
         return "Very Unhealthy"
     else:
         return "Hazardous"
@@ -63,7 +63,7 @@ def prepare_aqi_data(merged_df):
     """
     Grouping the AQI level data for a donuts chart
     """
-    aqi_levels = ['Good', 'Moderate', 'Unhealthy', 'Unhealthy for Sensitive Groups', 'Hazardous']
+    aqi_levels = ['Good', 'Moderate', 'Unhealthy', 'Unhealthy for Sensitive Groups', 'Very Unhealthy', 'Hazardous']
     aqi_data = {}
 
     for level in aqi_levels:
@@ -109,3 +109,6 @@ def standardize_country_names(df, country_column='Country'):
 
     return df
 merged_df = standardize_country_names(merged_df)
+
+
+print(f'{merged_df['AQI_Level'].value_counts()}')

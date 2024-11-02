@@ -5,6 +5,14 @@ import dash_ag_grid as dag
 from dash import html, dcc, Input, Output, State, register_page
 import dash_bootstrap_components as dbc
 
+
+
+register_page(__name__,
+path='/',
+title='Introducto and Dataset Details',
+description= 'Belief Intoduction to the project and Dateset details',
+order=0)
+
 from utils import merged_df
 
 
@@ -21,7 +29,7 @@ Air quality around the globe has gone through significant ups and downs since th
     - would a different figure tell the data story better?
     - are you able to replicate or improve the app 3 built by the Air Quality Stripes project?
 
-[data Source]()
+[data Source](https://github.com/plotly/Figure-Friday/tree/main/2024/week-36)
 
     """
 
@@ -43,12 +51,6 @@ This dashboard combines visual data exploration with interactive components, mak
 
 
 """
-
-dash.register_page(__name__,
-path='/',
-title='Introducto and Dataset Details',
-description= 'Belief Intoduction to the project and Dateset details',
-order=0)
 
 
 date_obj = "d3.timeParse('%Y')(params.merged_df.Year)"
